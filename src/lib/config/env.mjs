@@ -26,7 +26,7 @@ function appUrl(overrides) {
     throw new Error("APP_URL must use http or https.");
   }
 
-  return value.replace(/\/$/, "");
+  return value.replace(/\/+$/, "");
 }
 
 export function loadEnv(overrides = process.env) {

@@ -22,6 +22,12 @@ test("loads environment values and normalizes numeric limits", () => {
   assert.equal(env.MANUAL_REFRESH_COOLDOWN_SECONDS, 300);
 });
 
+test("strips multiple trailing slashes from APP_URL", () => {
+  const env = loadEnv({ ...validEnv, APP_URL: "https://example.com///" });
+
+  assert.equal(env.APP_URL, "https://example.com");
+});
+
 test("throws when DATABASE_URL is missing", () => {
   const { DATABASE_URL: _databaseUrl, ...envWithoutDatabase } = validEnv;
 
