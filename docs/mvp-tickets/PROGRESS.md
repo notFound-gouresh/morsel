@@ -1,13 +1,13 @@
 # Morsel MVP Progress
 
-Last updated: 2026-07-09
+Last updated: 2026-07-14
 
 Use this file to help Codex agents understand the current implementation state without rereading the full PRD. Update it after every ticket.
 
 ## Current State
 
 - Current sprint: Sprint 00 - Foundation
-- Current ticket: `S00-T01-runtime-config-and-errors.md`
+- Current ticket: `S00-T02-database-schema-and-client.md`
 - Release stage: pre-alpha, internal development only
 - User-facing release: not ready
 
@@ -35,20 +35,20 @@ Do not write real secrets in this file.
 
 | Need | Required By | Status | Notes |
 | --- | --- | --- | --- |
-| `APP_URL` | S00-T01 | Needed | Local value can be `http://localhost:3000`. |
-| `DATABASE_URL` | S00-T02 | Needed later | Use PostgreSQL. Store only in `.env.local`. |
-| `SESSION_SECRET` | S00-T01, S00-T03 | Needed | Must be at least 32 characters. Store only in `.env.local`. |
-| `CRAWLER_USER_AGENT` | S00-T01, S01-T02 | Needed | Use an identifiable product user agent. |
-| `FETCH_TIMEOUT_MS` | S00-T01, S01-T02 | Needed | Suggested local value: `10000`. |
-| `FETCH_MAX_BYTES` | S00-T01, S01-T02 | Needed | Suggested local value: `2000000`. |
-| `MANUAL_REFRESH_COOLDOWN_SECONDS` | S00-T01, S04-T03 | Needed | Suggested local value: `300`. |
+| `APP_URL` | S00-T01 | Documented | Local value can be `http://localhost:3000`. |
+| `DATABASE_URL` | S00-T02 | Needed next | Use PostgreSQL. Store only in `.env.local`. |
+| `SESSION_SECRET` | S00-T01, S00-T03 | Needed later | Must be at least 32 characters. Store only in `.env.local`. |
+| `CRAWLER_USER_AGENT` | S00-T01, S01-T02 | Needed later | Use an identifiable product user agent. |
+| `FETCH_TIMEOUT_MS` | S00-T01, S01-T02 | Documented | Suggested local value: `10000`. |
+| `FETCH_MAX_BYTES` | S00-T01, S01-T02 | Documented | Suggested local value: `2000000`. |
+| `MANUAL_REFRESH_COOLDOWN_SECONDS` | S00-T01, S04-T03 | Documented | Suggested local value: `300`. |
 | External provider keys | Later advanced features | Not needed for MVP | No Stripe, Slack, Discord, Telegram, or email keys in strict MVP. |
 
 ## Ticket Status
 
 | Ticket | Status | Branch/Commit | Commands Run | Notes |
 | --- | --- | --- | --- | --- |
-| S00-T01 Runtime Config and API Errors | Not Started |  |  | First implementation ticket. |
+| S00-T01 Runtime Config and API Errors | Done | `main` | `node --test src/test/config-env.test.mjs src/test/api-errors.test.mjs`; `node --test src/test/api-errors.test.mjs`; `bun run check` | 5 API-focused tests passed; 12 full-suite tests and production build passed. Error responses preserve their `MorselApiError` HTTP status. |
 | S00-T02 Database Schema and Client | Not Started |  |  | Needs PostgreSQL `DATABASE_URL`. |
 | S00-T03 Auth and Default Workspace | Not Started |  |  | Needs `SESSION_SECRET`. |
 | S00-T04 Authorization and Audit Logs | Not Started |  |  |  |
@@ -127,7 +127,7 @@ Message: MVP beta is ready with feed creation, auto-refresh, output links, basic
 
 ## Blockers
 
-No blockers recorded yet.
+No blockers recorded. S00-T02 needs a local PostgreSQL `DATABASE_URL` before its database verification can run.
 
 ## Decisions
 
