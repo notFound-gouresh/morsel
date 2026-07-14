@@ -49,7 +49,8 @@ Do not write real secrets in this file.
 | Ticket | Status | Branch/Commit | Commands Run | Notes |
 | --- | --- | --- | --- | --- |
 | S00-T01 Runtime Config and API Errors | Done | `main` | `node --test src/test/config-env.test.mjs src/test/api-errors.test.mjs`; `node --test src/test/api-errors.test.mjs`; `bun run check` | 5 API-focused tests passed; 12 full-suite tests and production build passed. Error responses preserve their `MorselApiError` HTTP status. |
-| S00-T02 Database Schema and Client | Not Started |  |  | Needs PostgreSQL `DATABASE_URL`. |
+| S00-T01b TypeScript and Lint Setup | Done | `main` (uncommitted) | `bun install`; `bun run typecheck`; `bun run lint`; `bun run check` | Standalone typecheck regenerates Next.js route types before running strict TypeScript. All 13 tests, typecheck, lint, and build pass. See the ticket for setup detail and Decisions for the `typescript`/`eslint` version pins. |
+| S00-T02 Database Schema and Client | Not Started |  |  | Needs PostgreSQL `DATABASE_URL`. Implement in TypeScript. |
 | S00-T03 Auth and Default Workspace | Not Started |  |  | Needs `SESSION_SECRET`. |
 | S00-T04 Authorization and Audit Logs | Not Started |  |  |  |
 | S01-T01 URL Safety and SSRF Protection | Not Started |  |  |  |
@@ -127,10 +128,16 @@ Message: MVP beta is ready with feed creation, auto-refresh, output links, basic
 
 ## Blockers
 
-No blockers recorded. S00-T02 needs a local PostgreSQL `DATABASE_URL` before its database verification can run.
+No blockers recorded. S00-T01b (TypeScript and lint setup) is complete. S00-T02 needs a local PostgreSQL `DATABASE_URL` before its database verification can run.
 
 ## Decisions
 
+- Use strict TypeScript and ESLint from the foundation sprint, gated through `bun run check`. Type/lint errors are the main automated check given lighter human review on this project. See `S00-T01b`.
+- Run `next typegen` before `tsc --noEmit` so standalone type checks always validate freshly generated Next.js route types rather than depending on existing `.next` output.
+- Run tests via Node's native TypeScript type stripping (Node 24+); no `ts-node`/`tsx` needed.
+- Pin `typescript` to `~5.9.0` — TypeScript 7 breaks `typescript-eslint@8`. See `S00-T01b`.
+- ESLint config is `eslint-config-next/core-web-vitals` + `typescript-eslint` recommended, not hand-picked plugins. See `S00-T01b`.
+- Pin `eslint` to `~9.39.0` — ESLint 10 breaks `eslint-plugin-react` (pulled in via `eslint-config-next`). See `S00-T01b`.
 - Use PostgreSQL plus Prisma for the MVP database path.
 - Use database-backed refresh jobs for MVP before adding Redis/BullMQ.
 - Keep keyword/topic feed creation out of strict MVP; consider Google News keyword feeds as a post-MVP or MVP+ ticket.

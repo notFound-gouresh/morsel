@@ -3,7 +3,7 @@
 import { Check, Copy, ExternalLink, Rss, Send, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import { buildFeedPreview, createEmbedSnippet } from "../lib/feed-builder.mjs";
+import { buildFeedPreview, createEmbedSnippet } from "../lib/feed-builder.ts";
 
 const presets = [
   "https://www.youtube.com/@verge",

@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { MorselApiError } from "../lib/api/errors.mjs";
+import { MorselApiError } from "../lib/api/errors.ts";
 import {
   createRequestId,
   jsonError,
   jsonOk,
-} from "../lib/api/responses.mjs";
+} from "../lib/api/responses.ts";
 
 test("creates UUID request IDs", () => {
   assert.match(

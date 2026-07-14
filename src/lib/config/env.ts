@@ -1,8 +1,10 @@
-import { loadLimits } from "./limits.mjs";
+import { loadLimits } from "./limits.ts";
+
+type EnvOverrides = Record<string, string | undefined>;
 
 const MIN_SESSION_SECRET_LENGTH = 32;
 
-function requiredString(overrides, name) {
+function requiredString(overrides: EnvOverrides, name: string): string {
   const value = overrides[name]?.trim();
 
   if (!value) {
@@ -12,9 +14,9 @@ function requiredString(overrides, name) {
   return value;
 }
 
-function appUrl(overrides) {
+function appUrl(overrides: EnvOverrides): string {
   const value = requiredString(overrides, "APP_URL");
-  let url;
+  let url: URL;
 
   try {
     url = new URL(value);
@@ -29,7 +31,7 @@ function appUrl(overrides) {
   return value.replace(/\/+$/, "");
 }
 
-export function loadEnv(overrides = process.env) {
+export function loadEnv(overrides: EnvOverrides = process.env) {
   const SESSION_SECRET = requiredString(overrides, "SESSION_SECRET");
 
   if (SESSION_SECRET.length < MIN_SESSION_SECRET_LENGTH) {

@@ -13,6 +13,7 @@ import {
   Filter,
   Globe2,
   Layers3,
+  type LucideIcon,
   Mail,
   Megaphone,
   MessageSquare,
@@ -24,23 +25,23 @@ import {
   Workflow,
 } from "lucide-react";
 
-import { FeedConsole } from "../components/feed-console.jsx";
+import { FeedConsole } from "../components/feed-console.tsx";
 
-const feedTypes = [
+const feedTypes: Array<[string, string]> = [
   ["Website to RSS", "Convert pages, blogs, and changelogs into feeds."],
   ["Visual Builder", "Select page sections and extract titles, images, and dates."],
   ["Topic Feeds", "Monitor keywords across news and web sources."],
   ["Newsletter to RSS", "Turn inbox newsletters into reader-friendly feed output."],
 ];
 
-const managementTools = [
+const managementTools: Array<[string, string, LucideIcon]> = [
   ["Aggregator", "Bundle many feeds into one normalized stream.", Layers3],
   ["Manual Curation", "Approve or reject posts before they publish.", CircleCheck],
   ["Keyword Filters", "Keep matched articles and remove duplicates.", Filter],
   ["Translation", "Localize feed output for multilingual audiences.", Globe2],
 ];
 
-const widgets = [
+const widgets: Array<[string, string]> = [
   ["News Wall", "A responsive grid for multiple feeds."],
   ["List", "A compact, scrollable post list."],
   ["Carousel", "Featured posts in a rotating display."],
@@ -48,7 +49,7 @@ const widgets = [
   ["Magazine", "Editorial layout with thumbnails and summaries."],
 ];
 
-const botCards = [
+const botCards: Array<[string, string, LucideIcon]> = [
   ["Discord", "Auto-post articles into channels.", MessageSquare],
   ["Slack", "Send monitored updates to teams.", MessageSquare],
   ["Telegram", "Publish feed updates to groups.", Megaphone],
@@ -70,7 +71,7 @@ const integrationNames = [
   "Google Sheets",
 ];
 
-const solutions = [
+const solutions: Array<[string, string, LucideIcon]> = [
   ["News Monitoring", "Follow publishers, search terms, and media coverage.", Newspaper],
   ["Competitor Tracking", "Watch product launches, blogs, pricing, and job posts.", Search],
   ["Brand Monitoring", "Track mentions across web, social, and review sources.", BellRing],

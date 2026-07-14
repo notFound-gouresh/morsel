@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { loadEnv } from "../lib/config/env.mjs";
+import { loadEnv } from "../lib/config/env.ts";
 
 const validEnv = {
   APP_URL: "http://localhost:3000/",

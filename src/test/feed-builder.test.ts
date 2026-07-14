@@ -5,7 +5,7 @@ import {
   buildFeedPreview,
   classifySourceUrl,
   createEmbedSnippet,
-} from "../lib/feed-builder.mjs";
+} from "../lib/feed-builder.ts";
 
 test("classifies common feed source URLs for the builder", () => {
   assert.equal(classifySourceUrl("https://www.youtube.com/@verge"), "YouTube");
@@ -17,6 +17,7 @@ test("builds a deterministic feed preview from a valid source", () => {
   const preview = buildFeedPreview("https://example.com/blog");
 
   assert.equal(preview.status, "ready");
+  if (preview.status !== "ready") return;
   assert.equal(preview.sourceType, "Website");
   assert.equal(preview.feedUrl, "https://feeds.rss-studio.local/example-com-blog.xml");
   assert.equal(preview.items.length, 3);
@@ -27,6 +28,7 @@ test("returns an actionable error for invalid source URLs", () => {
   const preview = buildFeedPreview("not a url");
 
   assert.equal(preview.status, "error");
+  if (preview.status !== "error") return;
   assert.equal(preview.message, "Enter a complete URL, including https://");
 });
 

@@ -45,9 +45,10 @@ Do not build yet:
 ### Sprint 00: Foundation
 
 1. `sprint-00-foundation/S00-T01-runtime-config-and-errors.md`
-2. `sprint-00-foundation/S00-T02-database-schema-and-client.md`
-3. `sprint-00-foundation/S00-T03-auth-and-default-workspace.md`
-4. `sprint-00-foundation/S00-T04-authorization-and-audit-logs.md`
+2. `sprint-00-foundation/S00-T01b-typescript-and-lint-setup.md`
+3. `sprint-00-foundation/S00-T02-database-schema-and-client.md`
+4. `sprint-00-foundation/S00-T03-auth-and-default-workspace.md`
+5. `sprint-00-foundation/S00-T04-authorization-and-audit-logs.md`
 
 ### Sprint 01: Feed Engine Core
 
@@ -93,6 +94,8 @@ Do not build yet:
 - Read and update `docs/mvp-tickets/PROGRESS.md`.
 - Read the PRD section referenced by the ticket before editing code.
 - Keep changes scoped to the files listed in the ticket unless a test exposes a required supporting change.
-- Run the exact tests required by the ticket, then run `bun run check`.
+- Run the exact tests required by the ticket, then run `bun run check`, which must pass lint, type check, test, and build.
 - Do not implement out-of-scope advanced features while completing MVP tickets.
+
+Convention note: from `S00-T01b` onward the codebase is strict TypeScript. Source and test modules use `.ts`, React components use `.tsx`, and root config files stay `.mjs`. Tickets authored before `S00-T01b` may still list `.mjs`/`.jsx` files; implement them as `.ts`/`.tsx`.
 - After each ticket, summarize changed files, commands run, test results, and any blocked acceptance criteria.

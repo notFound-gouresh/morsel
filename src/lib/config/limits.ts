@@ -1,4 +1,6 @@
-function positiveInteger(value, name) {
+type EnvOverrides = Record<string, string | undefined>;
+
+function positiveInteger(value: string | undefined, name: string): number {
   const normalized = typeof value === "string" ? value.trim() : value;
   const number = Number(normalized);
 
@@ -9,7 +11,7 @@ function positiveInteger(value, name) {
   return number;
 }
 
-export function loadLimits(overrides = process.env) {
+export function loadLimits(overrides: EnvOverrides = process.env) {
   return {
     FETCH_TIMEOUT_MS: positiveInteger(
       overrides.FETCH_TIMEOUT_MS,

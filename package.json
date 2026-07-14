@@ -8,8 +8,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test src/test/*.test.mjs",
-    "check": "bun run test && bun run build"
+    "test": "node --test src/test/*.test.ts",
+    "typecheck": "next typegen && tsc --noEmit",
+    "lint": "eslint .",
+    "check": "bun run lint && bun run typecheck && bun run test && bun run build"
   },
   "dependencies": {
     "lucide-react": "latest",
@@ -17,5 +19,13 @@
     "react": "latest",
     "react-dom": "latest"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "eslint": "~9.39.0",
+    "eslint-config-next": "latest",
+    "typescript": "~5.9.0",
+    "typescript-eslint": "latest"
+  }
 }

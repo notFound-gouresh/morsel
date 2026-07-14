@@ -1,12 +1,17 @@
 import { randomUUID } from "node:crypto";
 
-import { MorselApiError } from "./errors.mjs";
+import { MorselApiError } from "./errors.ts";
 
-export function createRequestId() {
+type ResponseInitWithRequestId = ResponseInit & { requestId?: string };
+
+export function createRequestId(): string {
   return randomUUID();
 }
 
-function responseInit(init, defaultStatus) {
+function responseInit(
+  init: ResponseInitWithRequestId,
+  defaultStatus: number,
+) {
   const { requestId = createRequestId(), headers, ...rest } = init;
   const responseHeaders = new Headers(headers);
   responseHeaders.set("x-request-id", requestId);
@@ -17,11 +22,11 @@ function responseInit(init, defaultStatus) {
       status: defaultStatus,
       ...rest,
       headers: responseHeaders,
-    },
+    } satisfies ResponseInit,
   };
 }
 
-export function jsonOk(data, init = {}) {
+export function jsonOk(data: unknown, init: ResponseInitWithRequestId = {}) {
   const response = responseInit(init, 200);
 
   return Response.json(
@@ -33,7 +38,10 @@ export function jsonOk(data, init = {}) {
   );
 }
 
-export function jsonError(error, init = {}) {
+export function jsonError(
+  error: unknown,
+  init: ResponseInitWithRequestId = {},
+) {
   const apiError =
     error instanceof MorselApiError
       ? error

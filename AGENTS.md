@@ -47,8 +47,10 @@ Out of scope until the MVP is done:
 - Install dependencies: `bun install`
 - Start dev server: `bun run dev`
 - Run tests: `bun run test`
+- Lint: `bun run lint`
+- Type check: `bun run typecheck`
 - Build production app: `bun run build`
-- Full verification: `bun run check`
+- Full verification: `bun run check` (runs lint, typecheck, test, and build)
 
 Use Bun because `package.json` declares `bun@1.3.9`.
 
@@ -60,7 +62,9 @@ Use Bun because `package.json` declares `bun@1.3.9`.
 - Keep changes scoped to the active ticket unless tests expose a required supporting change.
 - Update `docs/mvp-tickets/PROGRESS.md` at the end of each ticket with status, commands run, blockers, and next environment needs.
 - Prefer small, focused modules over large mixed-responsibility files.
-- Follow existing JavaScript module style: ESM, `.mjs` for library/test modules and `.jsx` for React components.
+- Write TypeScript: ESM, `.ts` for library/test modules and `.tsx` for React components, under `strict` mode. Config files at the repo root (`next.config.mjs`, `eslint.config.mjs`) stay `.mjs`.
+- Keep explicit file extensions in relative imports (e.g. `./limits.ts`) so Node's test runner resolves them.
+- Some tickets written before `S00-T01b` still list `.mjs`/`.jsx` files. Implement them as `.ts`/`.tsx`; the TypeScript convention supersedes those extensions.
 - Use `rg` for search.
 - Use `apply_patch` for manual file edits.
 - Do not add production dependencies without a clear reason in the final summary.
@@ -104,6 +108,7 @@ A ticket is done only when:
 
 - Its acceptance criteria are met.
 - Relevant tests were added or updated.
+- Lint and type checks pass under `strict` mode.
 - `bun run check` passes, or any failure is reported with the exact blocker.
 - `docs/mvp-tickets/PROGRESS.md` is updated.
 - The implementation stays inside MVP scope.

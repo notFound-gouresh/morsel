@@ -1,4 +1,4 @@
-const SOURCE_PATTERNS = [
+const SOURCE_PATTERNS: ReadonlyArray<readonly [string, string]> = [
   ["youtube.com", "YouTube"],
   ["youtu.be", "YouTube"],
   ["reddit.com", "Reddit"],
@@ -11,7 +11,21 @@ const SOURCE_PATTERNS = [
   ["t.me", "Telegram"],
 ];
 
-export function classifySourceUrl(value) {
+export type FeedPreviewItem = {
+  title: string;
+  meta: string;
+};
+
+export type FeedPreview =
+  | { status: "error"; message: string }
+  | {
+      status: "ready";
+      sourceType: string;
+      feedUrl: string;
+      items: FeedPreviewItem[];
+    };
+
+export function classifySourceUrl(value: string): string {
   try {
     const url = new URL(value);
     const host = url.hostname.replace(/^www\./, "");
@@ -22,8 +36,8 @@ export function classifySourceUrl(value) {
   }
 }
 
-export function buildFeedPreview(value) {
-  let url;
+export function buildFeedPreview(value: string): FeedPreview {
+  let url: URL;
 
   try {
     url = new URL(value);
@@ -72,6 +86,6 @@ export function buildFeedPreview(value) {
   };
 }
 
-export function createEmbedSnippet(feedUrl) {
+export function createEmbedSnippet(feedUrl: string): string {
   return `<script async src="https://rss-studio.local/widget.js" data-feed="${feedUrl}"></script>`;
 }
