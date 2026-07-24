@@ -27,10 +27,27 @@ Required environment variables:
 - `FETCH_MAX_BYTES`: Positive maximum response size in bytes.
 - `MANUAL_REFRESH_COOLDOWN_SECONDS`: Positive cooldown between manual refreshes.
 
+## Database
+
+Morsel uses PostgreSQL through Prisma. After setting `DATABASE_URL`, generate the
+client and apply the development migrations:
+
+```bash
+bun run db:generate
+bun run db:migrate
+bun run db:seed
+```
+
+The seed command creates an idempotent development-only user, workspace, and
+feed fixture. Run database tests only with `DATABASE_URL` pointing to a migrated
+local development or test database; the tests create uniquely named records and
+remove them when finished.
+
 ## Verify
 
 ```bash
 bun run check
 ```
 
-The check command runs the Node test suite and a production Next.js build.
+The check command runs lint, strict type checks, the Node test suite (including
+database constraints), and a production Next.js build.

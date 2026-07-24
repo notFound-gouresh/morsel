@@ -1,0 +1,408 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WorkspaceStatus {
+  ACTIVE    @map("active")
+  TRIALING  @map("trialing")
+  PAST_DUE  @map("past_due")
+  SUSPENDED @map("suspended")
+  DELETED   @map("deleted")
+
+  @@map("workspace_status")
+}
+
+enum WorkspaceRole {
+  OWNER   @map("owner")
+  ADMIN   @map("admin")
+  EDITOR  @map("editor")
+  VIEWER  @map("viewer")
+  BILLING @map("billing")
+  SUPPORT @map("support")
+
+  @@map("workspace_role")
+}
+
+enum FeedStatus {
+  DRAFT    @map("draft")
+  ACTIVE   @map("active")
+  PAUSED   @map("paused")
+  DEGRADED @map("degraded")
+  FAILED   @map("failed")
+  DELETED  @map("deleted")
+
+  @@map("feed_status")
+}
+
+enum FeedVisibility {
+  PUBLIC   @map("public")
+  PRIVATE  @map("private")
+  UNLISTED @map("unlisted")
+
+  @@map("feed_visibility")
+}
+
+enum FeedSourceType {
+  NATIVE     @map("native")
+  WEBPAGE    @map("webpage")
+  VISUAL     @map("visual")
+  PLATFORM   @map("platform")
+  SEARCH     @map("search")
+  NEWSLETTER @map("newsletter")
+
+  @@map("feed_source_type")
+}
+
+enum FeedSourceKind {
+  URL                @map("url")
+  RSS                @map("rss")
+  ATOM               @map("atom")
+  JSON_FEED          @map("jsonfeed")
+  SITEMAP            @map("sitemap")
+  VISUAL_RECIPE      @map("visual_recipe")
+  PLATFORM_ADAPTER   @map("platform_adapter")
+  NEWSLETTER_ADDRESS @map("newsletter_address")
+  SEARCH_QUERY       @map("search_query")
+
+  @@map("feed_source_kind")
+}
+
+enum FeedItemStatus {
+  ACTIVE   @map("active")
+  FILTERED @map("filtered")
+  HIDDEN   @map("hidden")
+  DELETED  @map("deleted")
+
+  @@map("feed_item_status")
+}
+
+enum FeedFilterScope {
+  WORKSPACE @map("workspace")
+  FEED      @map("feed")
+
+  @@map("feed_filter_scope")
+}
+
+enum FeedFilterType {
+  WHITELIST     @map("whitelist")
+  BLACKLIST     @map("blacklist")
+  FIELD_RULE    @map("field_rule")
+  MISSING_FIELD @map("missing_field")
+  DEDUP         @map("dedup")
+  SIMILARITY    @map("similarity")
+
+  @@map("feed_filter_type")
+}
+
+enum RefreshTrigger {
+  SCHEDULED @map("scheduled")
+  MANUAL    @map("manual")
+  INITIAL   @map("initial")
+  RETRY     @map("retry")
+  ADMIN     @map("admin")
+
+  @@map("refresh_trigger")
+}
+
+enum RefreshJobStatus {
+  QUEUED    @map("queued")
+  RUNNING   @map("running")
+  SUCCEEDED @map("succeeded")
+  FAILED    @map("failed")
+  CANCELLED @map("cancelled")
+
+  @@map("refresh_job_status")
+}
+
+enum ErrorSeverity {
+  INFO     @map("info")
+  WARNING  @map("warning")
+  ERROR    @map("error")
+  CRITICAL @map("critical")
+
+  @@map("error_severity")
+}
+
+model User {
+  id              String    @id @default(uuid()) @db.Uuid
+  email           String    @unique(map: "users_email_key") @db.Citext
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz
+  name            String?   @db.Text
+  avatarUrl       String?   @map("avatar_url") @db.Text
+  passwordHash    String?   @map("password_hash") @db.Text
+  timezone        String    @default("UTC") @db.Text
+  mfaEnabled      Boolean   @default(false) @map("mfa_enabled")
+  lastLoginAt     DateTime? @map("last_login_at") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  ownedWorkspaces Workspace[]       @relation("WorkspaceOwner")
+  memberships     WorkspaceMember[] @relation("MemberUser")
+  invitationsSent WorkspaceMember[] @relation("InvitedByUser")
+  feedsCreated    Feed[]            @relation("FeedCreator")
+  auditLogs       AuditLog[]        @relation("AuditActor")
+
+  @@map("users")
+}
+
+model Workspace {
+  id           String          @id @default(uuid()) @db.Uuid
+  name         String          @db.Text
+  slug         String          @unique(map: "workspaces_slug_key") @db.Text
+  ownerUserId  String          @map("owner_user_id") @db.Uuid
+  billingEmail String?         @map("billing_email") @db.Citext
+  status       WorkspaceStatus @default(ACTIVE)
+  logoUrl      String?         @map("logo_url") @db.Text
+  settings     Json            @default("{}") @db.JsonB
+  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  owner       User              @relation("WorkspaceOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  members     WorkspaceMember[]
+  feeds       Feed[]
+  items       FeedItem[]
+  filters     FeedFilter[]
+  refreshJobs FeedRefreshJob[]
+  auditLogs   AuditLog[]
+  errorLogs   ErrorLog[]
+  usageLimits UsageLimit[]
+
+  @@index([ownerUserId], map: "workspaces_owner_user_id_idx")
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id                  String        @id @default(uuid()) @db.Uuid
+  workspaceId         String        @map("workspace_id") @db.Uuid
+  userId              String        @map("user_id") @db.Uuid
+  role                WorkspaceRole
+  invitedByUserId     String?       @map("invited_by_user_id") @db.Uuid
+  invitedEmail        String?       @map("invited_email") @db.Citext
+  invitationTokenHash String?       @map("invitation_token_hash") @db.Text
+  invitationExpiresAt DateTime?     @map("invitation_expires_at") @db.Timestamptz
+  joinedAt            DateTime?     @map("joined_at") @db.Timestamptz
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation("MemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  invitedBy User?     @relation("InvitedByUser", fields: [invitedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([workspaceId, userId], map: "workspace_members_workspace_id_user_id_key")
+  @@index([workspaceId, role], map: "workspace_members_workspace_id_role_idx")
+  @@map("workspace_members")
+}
+
+model Feed {
+  id                     String         @id @default(uuid()) @db.Uuid
+  workspaceId            String         @map("workspace_id") @db.Uuid
+  name                   String         @db.Text
+  slug                   String         @db.Text
+  description            String?        @db.Text
+  status                 FeedStatus     @default(DRAFT)
+  visibility             FeedVisibility @default(PRIVATE)
+  sourceType             FeedSourceType @map("source_type")
+  sourceUrl              String         @map("source_url") @db.Text
+  publicRssUrl           String?        @map("public_rss_url") @db.Text
+  publicJsonUrl          String?        @map("public_json_url") @db.Text
+  publicCsvUrl           String?        @map("public_csv_url") @db.Text
+  refreshIntervalMinutes Int            @map("refresh_interval_minutes")
+  lastRefreshedAt        DateTime?      @map("last_refreshed_at") @db.Timestamptz
+  nextRefreshAt          DateTime?      @map("next_refresh_at") @db.Timestamptz
+  lastSuccessAt          DateTime?      @map("last_success_at") @db.Timestamptz
+  lastFailureAt          DateTime?      @map("last_failure_at") @db.Timestamptz
+  failureCount           Int            @default(0) @map("failure_count")
+  settings               Json           @default("{}") @db.JsonB
+  createdByUserId        String         @map("created_by_user_id") @db.Uuid
+  createdAt              DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt              DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt              DateTime?      @map("deleted_at") @db.Timestamptz
+
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdBy   User             @relation("FeedCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  sources     FeedSource[]
+  items       FeedItem[]
+  filters     FeedFilter[]
+  refreshJobs FeedRefreshJob[]
+  errorLogs   ErrorLog[]
+
+  @@unique([id, workspaceId], map: "feeds_id_workspace_id_key")
+  @@unique([workspaceId, slug], map: "feeds_workspace_id_slug_key")
+  @@index([workspaceId, status], map: "feeds_workspace_id_status_idx")
+  @@index([nextRefreshAt], map: "feeds_next_refresh_at_idx")
+  @@index([sourceUrl], map: "feeds_source_url_idx")
+  @@map("feeds")
+}
+
+model FeedSource {
+  id                  String         @id @default(uuid()) @db.Uuid
+  feedId              String         @map("feed_id") @db.Uuid
+  kind                FeedSourceKind
+  url                 String?        @db.Text
+  adapterKey          String?        @map("adapter_key") @db.Text
+  recipe              Json?          @db.JsonB
+  headers             Json?          @db.JsonB
+  robotsStatus        String?        @map("robots_status") @db.Text
+  etag                String?        @db.Text
+  lastModified        String?        @map("last_modified") @db.Text
+  lastHttpStatus      Int?           @map("last_http_status")
+  lastFetchDurationMs Int?           @map("last_fetch_duration_ms")
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  feed Feed @relation(fields: [feedId], references: [id], onDelete: Cascade)
+
+  @@index([feedId], map: "feed_sources_feed_id_idx")
+  @@index([adapterKey], map: "feed_sources_adapter_key_idx")
+  @@map("feed_sources")
+}
+
+model FeedItem {
+  id              String         @id @default(uuid()) @db.Uuid
+  workspaceId     String         @map("workspace_id") @db.Uuid
+  feedId          String         @map("feed_id") @db.Uuid
+  sourceItemId    String?        @map("source_item_id") @db.Text
+  fingerprint     String         @db.Text
+  canonicalUrl    String?        @map("canonical_url") @db.Text
+  url             String?        @db.Text
+  title           String?        @db.Text
+  descriptionText String?        @map("description_text") @db.Text
+  descriptionHtml String?        @map("description_html") @db.Text
+  author          String?        @db.Text
+  authors         Json           @default("[]") @db.JsonB
+  imageUrl        String?        @map("image_url") @db.Text
+  imageProxyUrl   String?        @map("image_proxy_url") @db.Text
+  datePublished   DateTime?      @map("date_published") @db.Timestamptz
+  dateModified    DateTime?      @map("date_modified") @db.Timestamptz
+  raw             Json?          @db.JsonB
+  status          FeedItemStatus @default(ACTIVE)
+  filterReason    Json?          @map("filter_reason") @db.JsonB
+  isPinned        Boolean        @default(false) @map("is_pinned")
+  firstSeenAt     DateTime       @default(now()) @map("first_seen_at") @db.Timestamptz
+  lastSeenAt      DateTime       @default(now()) @map("last_seen_at") @db.Timestamptz
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  feed      Feed      @relation(fields: [feedId, workspaceId], references: [id, workspaceId], onDelete: Cascade)
+
+  @@unique([feedId, fingerprint], map: "feed_items_feed_id_fingerprint_key")
+  @@index([workspaceId, feedId, datePublished(sort: Desc)], map: "feed_items_workspace_feed_published_idx")
+  @@index([canonicalUrl], map: "feed_items_canonical_url_idx")
+  @@map("feed_items")
+}
+
+model FeedFilter {
+  id          String          @id @default(uuid()) @db.Uuid
+  workspaceId String          @map("workspace_id") @db.Uuid
+  feedId      String?         @map("feed_id") @db.Uuid
+  scope       FeedFilterScope
+  name        String?         @db.Text
+  type        FeedFilterType
+  field       String?         @db.Text
+  operator    String?         @db.Text
+  value       Json?           @db.JsonB
+  isEnabled   Boolean         @default(true) @map("is_enabled")
+  orderIndex  Int             @default(0) @map("order_index")
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  feed      Feed?     @relation(fields: [feedId, workspaceId], references: [id, workspaceId], onDelete: Cascade)
+
+  @@index([workspaceId, scope, isEnabled], map: "feed_filters_workspace_scope_enabled_idx")
+  @@index([feedId, orderIndex], map: "feed_filters_feed_id_order_index_idx")
+  @@map("feed_filters")
+}
+
+model FeedRefreshJob {
+  id           String           @id @default(uuid()) @db.Uuid
+  workspaceId  String           @map("workspace_id") @db.Uuid
+  feedId       String           @map("feed_id") @db.Uuid
+  trigger      RefreshTrigger
+  status       RefreshJobStatus
+  priority     Int              @default(0)
+  startedAt    DateTime?        @map("started_at") @db.Timestamptz
+  finishedAt   DateTime?        @map("finished_at") @db.Timestamptz
+  attempt      Int              @default(0)
+  itemsFound   Int              @default(0) @map("items_found")
+  itemsNew     Int              @default(0) @map("items_new")
+  itemsChanged Int              @default(0) @map("items_changed")
+  errorCode    String?          @map("error_code") @db.Text
+  errorMessage String?          @map("error_message") @db.Text
+  metadata     Json             @default("{}") @db.JsonB
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  feed      Feed       @relation(fields: [feedId, workspaceId], references: [id, workspaceId], onDelete: Cascade)
+  errorLogs ErrorLog[]
+
+  @@index([feedId, createdAt(sort: Desc)], map: "feed_refresh_jobs_feed_id_created_at_idx")
+  @@index([status, priority, createdAt], map: "feed_refresh_jobs_status_priority_created_at_idx")
+  @@index([workspaceId, status], map: "feed_refresh_jobs_workspace_id_status_idx")
+  @@map("feed_refresh_jobs")
+}
+
+model AuditLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  workspaceId   String?  @map("workspace_id") @db.Uuid
+  actorUserId   String?  @map("actor_user_id") @db.Uuid
+  action        String   @db.Text
+  targetType    String?  @map("target_type") @db.Text
+  targetId      String?  @map("target_id") @db.Uuid
+  ipHash        String?  @map("ip_hash") @db.Text
+  userAgentHash String?  @map("user_agent_hash") @db.Text
+  metadata      Json     @default("{}") @db.JsonB
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  actor     User?      @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt(sort: Desc)], map: "audit_logs_workspace_id_created_at_idx")
+  @@index([targetType, targetId], map: "audit_logs_target_type_target_id_idx")
+  @@index([actorUserId, createdAt(sort: Desc)], map: "audit_logs_actor_user_id_created_at_idx")
+  @@map("audit_logs")
+}
+
+model ErrorLog {
+  id          String        @id @default(uuid()) @db.Uuid
+  workspaceId String?       @map("workspace_id") @db.Uuid
+  feedId      String?       @map("feed_id") @db.Uuid
+  jobId       String?       @map("job_id") @db.Uuid
+  severity    ErrorSeverity
+  source      String?       @db.Text
+  code        String?       @db.Text
+  message     String        @db.Text
+  details     Json          @default("{}") @db.JsonB
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  workspace Workspace?      @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  feed      Feed?           @relation(fields: [feedId], references: [id], onDelete: SetNull)
+  job       FeedRefreshJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@index([feedId, createdAt(sort: Desc)], map: "error_logs_feed_id_created_at_idx")
+  @@index([severity, createdAt(sort: Desc)], map: "error_logs_severity_created_at_idx")
+  @@index([code, createdAt(sort: Desc)], map: "error_logs_code_created_at_idx")
+  @@map("error_logs")
+}
+
+model UsageLimit {
+  id          String   @id @default(uuid()) @db.Uuid
+  workspaceId String   @map("workspace_id") @db.Uuid
+  periodStart DateTime @map("period_start") @db.Timestamptz
+  periodEnd   DateTime @map("period_end") @db.Timestamptz
+  metric      String   @db.Text
+  used        Int      @default(0)
+  limit       Int?
+  metadata    Json     @default("{}") @db.JsonB
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, periodStart, periodEnd, metric], map: "usage_limits_workspace_period_metric_key")
+  @@map("usage_limits")
+}

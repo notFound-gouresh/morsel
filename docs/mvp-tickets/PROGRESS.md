@@ -1,13 +1,13 @@
 # Morsel MVP Progress
 
-Last updated: 2026-07-14
+Last updated: 2026-07-23
 
 Use this file to help Codex agents understand the current implementation state without rereading the full PRD. Update it after every ticket.
 
 ## Current State
 
 - Current sprint: Sprint 00 - Foundation
-- Current ticket: `S00-T02-database-schema-and-client.md`
+- Next ticket (not started): `S00-T03-auth-and-default-workspace.md`
 - Release stage: pre-alpha, internal development only
 - User-facing release: not ready
 
@@ -36,8 +36,8 @@ Do not write real secrets in this file.
 | Need | Required By | Status | Notes |
 | --- | --- | --- | --- |
 | `APP_URL` | S00-T01 | Documented | Local value can be `http://localhost:3000`. |
-| `DATABASE_URL` | S00-T02 | Needed next | Use PostgreSQL. Store only in `.env.local`. |
-| `SESSION_SECRET` | S00-T01, S00-T03 | Needed later | Must be at least 32 characters. Store only in `.env.local`. |
+| `DATABASE_URL` | S00-T02 | Configured; migrations verified | Present in `.env.local`. The initial schema and feed/workspace tenancy migrations, seed, schema tests, and full verification passed by 2026-07-23. |
+| `SESSION_SECRET` | S00-T01, S00-T03 | Configured | A generated 64-character secret is present in `.env.local`. Do not copy it into source control or documentation. |
 | `CRAWLER_USER_AGENT` | S00-T01, S01-T02 | Needed later | Use an identifiable product user agent. |
 | `FETCH_TIMEOUT_MS` | S00-T01, S01-T02 | Documented | Suggested local value: `10000`. |
 | `FETCH_MAX_BYTES` | S00-T01, S01-T02 | Documented | Suggested local value: `2000000`. |
@@ -49,9 +49,9 @@ Do not write real secrets in this file.
 | Ticket | Status | Branch/Commit | Commands Run | Notes |
 | --- | --- | --- | --- | --- |
 | S00-T01 Runtime Config and API Errors | Done | `main` | `node --test src/test/config-env.test.mjs src/test/api-errors.test.mjs`; `node --test src/test/api-errors.test.mjs`; `bun run check` | 5 API-focused tests passed; 12 full-suite tests and production build passed. Error responses preserve their `MorselApiError` HTTP status. |
-| S00-T01b TypeScript and Lint Setup | Done | `main` (uncommitted) | `bun install`; `bun run typecheck`; `bun run lint`; `bun run check` | Standalone typecheck regenerates Next.js route types before running strict TypeScript. All 13 tests, typecheck, lint, and build pass. See the ticket for setup detail and Decisions for the `typescript`/`eslint` version pins. |
-| S00-T02 Database Schema and Client | Not Started |  |  | Needs PostgreSQL `DATABASE_URL`. Implement in TypeScript. |
-| S00-T03 Auth and Default Workspace | Not Started |  |  | Needs `SESSION_SECRET`. |
+| S00-T01b TypeScript and Lint Setup | Done | `main` / `8e4ca03` | `bun install`; `bun run typecheck`; `bun run lint`; `bun run check` | Standalone typecheck regenerates Next.js route types before running strict TypeScript. All 13 tests, typecheck, lint, and build pass. See the ticket for setup detail and Decisions for the `typescript`/`eslint` version pins. |
+| S00-T02 Database Schema and Client | Done | `main` (uncommitted) | `bunx prisma format`; `bunx prisma validate`; `bunx prisma generate`; `bunx prisma migrate dev --name init_mvp_schema --create-only`; `bunx prisma migrate dev`; `bun run db:seed`; `bunx prisma migrate diff --from-schema-datasource prisma/schema.prisma --to-schema-datamodel prisma/schema.prisma --script`; `bunx prisma migrate deploy`; `node --env-file=.env.local --test src/test/db-schema.test.ts`; `bun run check` | Initial PostgreSQL schema and migration, reusable client, repository helpers, idempotent development seed, feed/workspace tenant-integrity constraints, and constraint tests are complete. All 20 tests, lint, typecheck, and production build pass. |
+| S00-T03 Auth and Default Workspace | Not Started |  |  | `SESSION_SECRET` is configured; auth implementation has not started. |
 | S00-T04 Authorization and Audit Logs | Not Started |  |  |  |
 | S01-T01 URL Safety and SSRF Protection | Not Started |  |  |  |
 | S01-T02 HTTP Fetcher and Robots Policy | Not Started |  |  | Needs crawler env values. |
@@ -128,7 +128,7 @@ Message: MVP beta is ready with feed creation, auto-refresh, output links, basic
 
 ## Blockers
 
-No blockers recorded. S00-T01b (TypeScript and lint setup) is complete. S00-T02 needs a local PostgreSQL `DATABASE_URL` before its database verification can run.
+No blockers recorded. S00-T02 is complete, and its initial migration is applied to the configured PostgreSQL database. S00-T03 can use the configured `SESSION_SECRET`, `APP_URL`, and `DATABASE_URL`.
 
 ## Decisions
 
@@ -139,6 +139,10 @@ No blockers recorded. S00-T01b (TypeScript and lint setup) is complete. S00-T02 
 - ESLint config is `eslint-config-next/core-web-vitals` + `typescript-eslint` recommended, not hand-picked plugins. See `S00-T01b`.
 - Pin `eslint` to `~9.39.0` — ESLint 10 breaks `eslint-plugin-react` (pulled in via `eslint-config-next`). See `S00-T01b`.
 - Use PostgreSQL plus Prisma for the MVP database path.
+- Pin Prisma ORM and Prisma Client to `6.19.3` for the established Node client runtime used by this ticket. Prisma CLI configuration loads `.env.local` only when `DATABASE_URL` is not already provided by the environment.
+- Use PostgreSQL `citext` for case-insensitive email uniqueness. The initial migration enables the extension before creating email columns.
+- Enforce matching feed and workspace IDs for feed items, feed filters, and refresh jobs with composite foreign keys to prevent cross-workspace records.
+- Database tests create uniquely named records, remove them after each suite, and load `.env.local` only when it exists so CI-provided environment variables remain supported.
 - Use database-backed refresh jobs for MVP before adding Redis/BullMQ.
 - Keep keyword/topic feed creation out of strict MVP; consider Google News keyword feeds as a post-MVP or MVP+ ticket.
 - Keep advanced integrations out of strict MVP until feed creation, refresh, filtering, and outputs are production-ready.
